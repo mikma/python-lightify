@@ -109,16 +109,25 @@ class Group:
 
     def set_onoff(self, on):
         data = self.__conn.build_onoff(self.__idx, on)
+        print 'sending "%s"' % binascii.hexlify(data)
         self.__conn.send(data)
         self.__conn.recv()
 
     def set_luminance(self, lum, time):
         data = self.__conn.build_luminance(self.__idx, lum, time)
+        print 'sending "%s"' % binascii.hexlify(data)
         self.__conn.send(data)
         self.__conn.recv()
 
     def set_temperature(self, temp, time):
         data = self.__conn.build_temp(self.__idx, temp, time)
+        print 'sending "%s"' % binascii.hexlify(data)
+        self.__conn.send(data)
+        self.__conn.recv()
+
+    def set_rgb(self, r, g, b, time):
+        data = self.__conn.build_colour(self.__idx, r, g, b, time)
+        print 'sending "%s"' % binascii.hexlify(data)
         self.__conn.send(data)
         self.__conn.recv()
 
@@ -188,7 +197,7 @@ class Lightify:
         command = 0x31
         return self.build_command(command, group, struct.pack("<BH", luminance, time))
 
-    def colour(self, group, red, green, blue, time):
+    def build_colour(self, group, red, green, blue, time):
         command = 0x36
         return self.build_command(command, group, struct.pack("<BBBBH", red, green, blue, 0xff, time))
 
