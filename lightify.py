@@ -15,6 +15,12 @@
 # limitations under the License.
 #
 
+#
+# WIP Python module for Osram lightify
+# Communicates with a gateway connected to the same LAN via TCP port 4000
+# using a binary protocol
+#
+
 import binascii
 import socket
 import sys
