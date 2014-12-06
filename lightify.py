@@ -138,9 +138,11 @@ class Lightify:
             sys.exit(2)
 
     def groups(self):
+        """Dict from group name to Group object."""
         return self.__groups
 
     def lights(self):
+        """Dict from light addr to Light object."""
         return self.__lights
 
     def next_seq(self):
