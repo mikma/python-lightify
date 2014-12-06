@@ -102,6 +102,7 @@ class Lightify:
         return groups
 
     def group_info(self, group):
+        lights = []
         data = self.build_group_info(group)
         print 'sending "%s"' % binascii.hexlify(data)
         self.__sock.sendall(data)
@@ -114,8 +115,10 @@ class Lightify:
             payload = data[pos:pos+8]
             (addr,) = struct.unpack("<Q", payload[:8])
             print "%d: %x" % (i, addr)
+            lights.append(addr)
 
         #self.read_light_status(addr)
+        return lights
 
 
     def recv(self):
@@ -192,7 +195,11 @@ def main(argv):
     groups = lightify.group_list()
 
     for group in groups.iterkeys():
-        lightify.group_info(group)
+        lights = lightify.group_info(group)
+        print "Lights: %s" % lights
+
+#        for light in lights:
+#            lightify.read_light_status(light)
 
     #lightify.read_all_light_status(1)
 
