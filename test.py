@@ -31,8 +31,9 @@ def main(argv):
     print "keys:%s" % conn.groups().keys()
     desk = conn.groups()["Desk"]
     desk.set_onoff(0)
-    time.sleep(2)
+    desk.set_luminance(0, 0)
     desk.set_onoff(1)
+    desk.set_luminance(25, 10)
 
     sys.exit(0)
 

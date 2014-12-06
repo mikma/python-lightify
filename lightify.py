@@ -112,6 +112,11 @@ class Group:
         self.__conn.send(data)
         self.__conn.recv()
 
+    def set_luminance(self, lum, time):
+        data = self.__conn.build_luminance(self.__idx, lum, time)
+        self.__conn.send(data)
+        self.__conn.recv()
+
     def __str__(self):
         s = ""
         for light_addr in self.lights():
