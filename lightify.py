@@ -39,9 +39,74 @@ PORT = 4000
 # 36 set group colour
 # 68 light status (returns light address and light status (?))
 
+class Light:
+    def __init__(self, addr, name):
+        self.__addr = addr
+        self.__name = name
+
+    def name(self):
+        return self.__name
+
+    def addr(self):
+        return self.__addr
+
+    def __str__(self):
+        return "<light: %s>" % self.name()
+
+    def on(self):
+        return self.__on
+
+    def set_on(self, on):
+        self.__on = on
+
+    def lum(self):
+        return self.__lum
+
+    def set_lum(self, lum):
+        self.__lum = lum
+
+    def temp(self):
+        return self.__temp
+
+    def set_temp(self, temp):
+        self.__temp = temp
+
+    def rgb(self):
+        return (self.red(), self.green(), self.blue())
+
+    def set_rgb(self, r, g, b):
+        self.__r = r
+        self.__g = g
+        self.__b = b
+
+    def red(self):
+        return self.__r
+
+    def green(self):
+        return self.__g
+
+    def blue(self):
+        return self.__b
+
+class Group:
+    def __init__(self):
+        pass
+
+    def name(self):
+        return self.__name
+
+    def id(self):
+        return self.__id
+
+    def __str__(self):
+        return "<group: %s>" % self.name()
+
+
 class Lightify:
     def __init__(self, host):
         self.__seq = 1
+        self.__groups = {}
+        self.__lights = {}
 
         try:
             self.__sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -54,6 +119,12 @@ class Lightify:
         except socket.error, msg:
             sys.stderr.write("[ERROR] %s\n" % msg[1])
             sys.exit(2)
+
+    def groups(self):
+        return self.__groups
+
+    def lights(self):
+        return self.__lights
 
     def next_seq(self):
         self.__seq = self.__seq + 1
@@ -117,6 +188,7 @@ class Lightify:
             payload = data[pos:pos+18]
 
             (idx, name) = struct.unpack("<H16s", payload)
+
             groups[idx] = name
             print "Idx %d: '%s'" % (idx, name)
 
@@ -180,14 +252,17 @@ class Lightify:
         print 'blue:  %d' % blue
         return (on, lum, temp, red, green, blue)
 
-    def read_all_light_status(self, flag):
-        data = self.build_all_light_status(flag)
+    def update_all_light_status(self):
+        data = self.build_all_light_status(1)
         print 'sending %d "%s"' % (len(data), binascii.hexlify(data))
         self.__sock.sendall(data)
         data = self.recv()
         (num,) = struct.unpack("<H", data[7:9])
 
         print 'num: %d' % num
+
+        old_lights = self.__lights
+        new_lights = {}
 
         for i in range(0, num):
             pos = 9 + i * 42
@@ -198,6 +273,10 @@ class Lightify:
             (a,addr,status,name) = struct.unpack("<HQ16s16s", payload)
 
             print 'light: %x %x %s' % (a,addr,name)
+            if addr in old_lights:
+                light = old_lights[addr]
+            else:
+                light = Light(addr, name)
 
             (b,on,lum,temp,red,green,blue,h) = struct.unpack("<Q2BH4B", status)
             print 'status: %x %0x' % (b, h)
@@ -208,5 +287,13 @@ class Lightify:
             print 'red:   %d' % red
             print 'green: %d' % green
             print 'blue:  %d' % blue
+
+            light.set_on(on)
+            light.set_lum(lum)
+            light.set_temp(temp)
+            light.set_rgb(red, green, blue)
+            new_lights[addr] = light
         #return (on, lum, temp, red, green, blue)
+
+        self.__lights = new_lights
 
