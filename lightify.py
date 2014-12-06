@@ -117,6 +117,11 @@ class Group:
         self.__conn.send(data)
         self.__conn.recv()
 
+    def set_temperature(self, temp, time):
+        data = self.__conn.build_temp(self.__idx, temp, time)
+        self.__conn.send(data)
+        self.__conn.recv()
+
     def __str__(self):
         s = ""
         for light_addr in self.lights():
@@ -174,9 +179,9 @@ class Lightify:
         return self.build_command(command, group, struct.pack("<B", on))
 
 
-    def build_temp(self, group, temp):
+    def build_temp(self, group, temp, time):
         command = 0x33
-        return self.build_command(command, group, struct.pack("<HH", temp, 10))
+        return self.build_command(command, group, struct.pack("<HH", temp, time))
 
 
     def build_luminance(self, group, luminance, time):
