@@ -17,6 +17,7 @@
 
 import lightify
 import sys
+import time
 
 def main(argv):
 
@@ -26,6 +27,12 @@ def main(argv):
     conn.update_group_list()
     for (name, group) in conn.groups().iteritems():
         print "%s %s" % (name, group)
+
+    print "keys:%s" % conn.groups().keys()
+    desk = conn.groups()["Desk"]
+    desk.set_onoff(0)
+    time.sleep(2)
+    desk.set_onoff(1)
 
     sys.exit(0)
 

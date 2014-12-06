@@ -107,6 +107,11 @@ class Group:
     def set_lights(self, lights):
         self.__lights = lights
 
+    def set_onoff(self, on):
+        data = self.__conn.build_onoff(self.__idx, on)
+        self.__conn.send(data)
+        self.__conn.recv()
+
     def __str__(self):
         s = ""
         for light_addr in self.lights():
@@ -159,7 +164,7 @@ class Lightify:
 
         return struct.pack("<H14B", length, 0x02, command, 0, 0, 0x7, self.next_seq(), group, 0, 0, 0, 0, 0, 0, 0) + data
 
-    def onoff(self, group, on):
+    def build_onoff(self, group, on):
         command = 0x32
         return self.build_command(command, group, struct.pack("<B", on))
 
@@ -208,6 +213,7 @@ class Lightify:
             payload = data[pos:pos+18]
 
             (idx, name) = struct.unpack("<H16s", payload)
+            name = name.replace('\0', "")
 
             groups[idx] = name
             print "Idx %d: '%s'" % (idx, name)
@@ -235,6 +241,7 @@ class Lightify:
         data = self.recv()
         payload = data[7:]
         (idx, name, num) = struct.unpack("<H16sB", payload[:19])
+        name = name.replace('\0', "")
         print "Idx %d: '%s' %d" % (idx, name, num)
         for i in range(0,num):
             pos = 7 + 19 + i * 8
@@ -247,6 +254,8 @@ class Lightify:
         #self.read_light_status(addr)
         return lights
 
+    def send(self, data):
+        return self.__sock.sendall(data)
 
     def recv(self):
         lengthsize = 2
