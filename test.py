@@ -23,6 +23,12 @@ def main(argv):
     conn = lightify.Lightify(argv[1])
 
     conn.update_all_light_status()
+    conn.update_group_list()
+    for (name, group) in conn.groups().iteritems():
+        print "%s %s" % (name, group)
+
+    sys.exit(0)
+
 
     for (addr, light) in conn.lights().iteritems():
         print "%x %d %d %d %s %s" % (addr, light.on(), light.lum(), light.temp(), light.rgb(), light)

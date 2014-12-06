@@ -89,17 +89,34 @@ class Light:
         return self.__b
 
 class Group:
-    def __init__(self):
-        pass
+    def __init__(self, conn, idx, name):
+        self.__conn = conn
+        self.__idx = idx
+        self.__name = name
+        self.__lights = []
 
     def name(self):
         return self.__name
 
-    def id(self):
-        return self.__id
+    def idx(self):
+        return self.__idx
+
+    def lights(self):
+        return self.__lights
+
+    def set_lights(self, lights):
+        self.__lights = lights
 
     def __str__(self):
-        return "<group: %s>" % self.name()
+        s = ""
+        for light_addr in self.lights():
+            if light_addr in self.__conn.lights():
+                light = self.__conn.lights()[light_addr]
+            else:
+                light = "%x" % light_addr
+            s = s + str(light) + " "
+
+        return "<group: %s, lights: %s>" % (self.name(), s)
 
 
 class Lightify:
@@ -183,6 +200,7 @@ class Lightify:
         data = self.recv()
         (num,) = struct.unpack("<H", data[7:9])
         print 'Num %d' % num
+
         for i in range(0, num):
             pos = 9+i*18
             payload = data[pos:pos+18]
@@ -193,6 +211,19 @@ class Lightify:
             print "Idx %d: '%s'" % (idx, name)
 
         return groups
+
+    def update_group_list(self):
+        lst = self.group_list()
+        groups = {}
+
+        for (idx, name) in lst.iteritems():
+            group = Group(self, idx, name)
+            group.set_lights(self.group_info(idx))
+
+            groups[name] = group
+
+        self.__groups = groups
+
 
     def group_info(self, group):
         lights = []
@@ -208,6 +239,7 @@ class Lightify:
             payload = data[pos:pos+8]
             (addr,) = struct.unpack("<Q", payload[:8])
             print "%d: %x" % (i, addr)
+
             lights.append(addr)
 
         #self.read_light_status(addr)
