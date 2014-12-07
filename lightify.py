@@ -40,7 +40,8 @@ PORT = 4000
 # 68 light status (returns light address and light status (?))
 
 class Light:
-    def __init__(self, addr, name):
+    def __init__(self, conn, addr, name):
+        self.__conn = conn
         self.__addr = addr
         self.__name = name
 
@@ -64,8 +65,12 @@ class Light:
     def on(self):
         return self.__on
 
-    def set_on(self, on):
+    def set_onoff(self, on):
         self.__on = on
+        data = self.__conn.build_light_onoff(self, on)
+        print 'sending "%s"' % binascii.hexlify(data)
+        self.__conn.send(data)
+        self.__conn.recv()
 
     def lum(self):
         return self.__lum
@@ -200,10 +205,18 @@ class Lightify:
 
         return struct.pack("<H14B", length, 0x02, command, 0, 0, 0x7, self.next_seq(), group, 0, 0, 0, 0, 0, 0, 0) + data
 
+    def build_light_command(self, command, light, data):
+        length = 6 + 8 + len(data)
+
+        return struct.pack("<H6BQ", length, 0x00, command, 0, 0, 0x9, self.next_seq(), light.addr()) + data
+
     def build_onoff(self, group, on):
         command = 0x32
         return self.build_command(command, group, struct.pack("<B", on))
 
+    def build_light_onoff(self, light, on):
+        command = 0x32
+        return self.build_light_command(command, light, struct.pack("<B", on))
 
     def build_temp(self, group, temp, time):
         command = 0x33
@@ -356,7 +369,7 @@ class Lightify:
             if addr in old_lights:
                 light = old_lights[addr]
             else:
-                light = Light(addr, name)
+                light = Light(self, addr, name)
 
             (b,on,lum,temp,red,green,blue,h) = struct.unpack("<Q2BH4B", status)
             print 'status: %x %0x' % (b, h)
