@@ -53,6 +53,14 @@ class Light:
     def __str__(self):
         return "<light: %s>" % self.name()
 
+    def update_status(self, on, lum, temp, r, g, b):
+        self.__on = on
+        self.__lum = lum
+        self.__temp = temp
+        self.__r = r
+        self.__g = g
+        self.__b = b
+
     def on(self):
         return self.__on
 
@@ -168,6 +176,15 @@ class Lightify:
     def lights(self):
         """Dict from light addr to Light object."""
         return self.__lights
+
+    def light_byname(self, name):
+        print len(self.lights())
+
+        for light in self.lights().itervalues():
+            if light.name() == name:
+                return light
+
+        return None
 
     def next_seq(self):
         self.__seq = self.__seq + 1
@@ -333,6 +350,7 @@ class Lightify:
             print i, pos, len(payload)
 
             (a,addr,status,name) = struct.unpack("<HQ16s16s", payload)
+            name = name.replace('\0', "")
 
             print 'light: %x %x %s' % (a,addr,name)
             if addr in old_lights:
@@ -350,10 +368,7 @@ class Lightify:
             print 'green: %d' % green
             print 'blue:  %d' % blue
 
-            light.set_on(on)
-            light.set_lum(lum)
-            light.set_temp(temp)
-            light.set_rgb(red, green, blue)
+            light.update_status(on, lum, temp, red, green, blue)
             new_lights[addr] = light
         #return (on, lum, temp, red, green, blue)
 
