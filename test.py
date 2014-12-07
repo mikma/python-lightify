@@ -18,15 +18,29 @@
 import lightify
 import sys
 import time
+import logging
+
+MODULE = "__main__"
 
 def main(argv):
+    logging.basicConfig()
+
+    logger = logging.getLogger(MODULE)
+    logger.setLevel(logging.DEBUG)
+    #logger.addHandler(logging.StreamHandler())
+
+    liblogger = logging.getLogger('lightify')
+    #liblogger.addHandler(logging.StreamHandler())
+    liblogger.setLevel(logging.INFO)
+
+    logger.info("Logging %s", MODULE)
 
     conn = lightify.Lightify(argv[1])
 
     conn.update_all_light_status()
     conn.update_group_list()
     for (name, group) in conn.groups().iteritems():
-        print "%s %s" % (name, group)
+        logger.info("group: %s %s", name, group)
 
     print "keys:%s" % conn.groups().keys()
     desk = conn.groups()["Desk"]

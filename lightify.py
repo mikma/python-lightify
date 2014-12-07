@@ -26,7 +26,9 @@ import socket
 import sys
 import struct
 import time
+import logging
 
+MODULE = __name__
 PORT = 4000
 
 # Commands
@@ -41,6 +43,7 @@ PORT = 4000
 
 class Light:
     def __init__(self, conn, addr, name):
+        self.__logger = logging.getLogger(__name__)
         self.__conn = conn
         self.__addr = addr
         self.__name = name
@@ -68,7 +71,7 @@ class Light:
     def set_onoff(self, on):
         self.__on = on
         data = self.__conn.build_light_onoff(self, on)
-        print 'sending "%s"' % binascii.hexlify(data)
+        self.logger.debug('sending "%s"', binascii.hexlify(data))
         self.__conn.send(data)
         self.__conn.recv()
 
@@ -102,8 +105,9 @@ class Light:
         return self.__b
 
 class Group:
-    def __init__(self, conn, idx, name):
+    def __init__(self, conn, logger, idx, name):
         self.__conn = conn
+        self.__logger = logger
         self.__idx = idx
         self.__name = name
         self.__lights = []
@@ -122,25 +126,25 @@ class Group:
 
     def set_onoff(self, on):
         data = self.__conn.build_onoff(self.__idx, on)
-        print 'sending "%s"' % binascii.hexlify(data)
+        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.__conn.send(data)
         self.__conn.recv()
 
     def set_luminance(self, lum, time):
         data = self.__conn.build_luminance(self.__idx, lum, time)
-        print 'sending "%s"' % binascii.hexlify(data)
+        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.__conn.send(data)
         self.__conn.recv()
 
     def set_temperature(self, temp, time):
         data = self.__conn.build_temp(self.__idx, temp, time)
-        print 'sending "%s"' % binascii.hexlify(data)
+        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.__conn.send(data)
         self.__conn.recv()
 
     def set_rgb(self, r, g, b, time):
         data = self.__conn.build_colour(self.__idx, r, g, b, time)
-        print 'sending "%s"' % binascii.hexlify(data)
+        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.__conn.send(data)
         self.__conn.recv()
 
@@ -158,6 +162,10 @@ class Group:
 
 class Lightify:
     def __init__(self, host):
+        self.__logger = logging.getLogger(MODULE)
+        self.__logger.addHandler(logging.NullHandler())
+        self.__logger.info("Logging %s", MODULE)
+
         self.__seq = 1
         self.__groups = {}
         self.__lights = {}
@@ -183,7 +191,7 @@ class Lightify:
         return self.__lights
 
     def light_byname(self, name):
-        print len(self.lights())
+        self.__logger.debug(len(self.lights()))
 
         for light in self.lights().itervalues():
             if light.name() == name:
@@ -208,7 +216,7 @@ class Lightify:
     def build_light_command(self, command, light, data):
         length = 6 + 8 + len(data)
 
-        return struct.pack("<H6BQ", length, 0x00, command, 0, 0, 0x9, self.next_seq(), light.addr()) + data
+        return struct.pack("<H6BQ", length, 0x00, command, 0, 0, 0x7, self.next_seq(), light.addr()) + data
 
     def build_onoff(self, group, on):
         command = 0x32
@@ -251,11 +259,11 @@ class Lightify:
     def group_list(self):
         groups = {}
         data = self.build_group_list()
-        print 'sending "%s"' % binascii.hexlify(data)
+        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.__sock.sendall(data)
         data = self.recv()
         (num,) = struct.unpack("<H", data[7:9])
-        print 'Num %d' % num
+        self.__logger.debug('Num %d', num)
 
         for i in range(0, num):
             pos = 9+i*18
@@ -265,7 +273,7 @@ class Lightify:
             name = name.replace('\0', "")
 
             groups[idx] = name
-            print "Idx %d: '%s'" % (idx, name)
+            self.__logger.debug("Idx %d: '%s'", idx, name)
 
         return groups
 
@@ -274,7 +282,7 @@ class Lightify:
         groups = {}
 
         for (idx, name) in lst.iteritems():
-            group = Group(self, idx, name)
+            group = Group(self, self.__logger, idx, name)
             group.set_lights(self.group_info(idx))
 
             groups[name] = group
@@ -285,18 +293,18 @@ class Lightify:
     def group_info(self, group):
         lights = []
         data = self.build_group_info(group)
-        print 'sending "%s"' % binascii.hexlify(data)
+        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.__sock.sendall(data)
         data = self.recv()
         payload = data[7:]
         (idx, name, num) = struct.unpack("<H16sB", payload[:19])
         name = name.replace('\0', "")
-        print "Idx %d: '%s' %d" % (idx, name, num)
+        self.__logger.debug("Idx %d: '%s' %d", idx, name, num)
         for i in range(0,num):
             pos = 7 + 19 + i * 8
             payload = data[pos:pos+8]
             (addr,) = struct.unpack("<Q", payload[:8])
-            print "%d: %x" % (i, addr)
+            self.__logger.debug("%d: %x", i, addr)
 
             lights.append(addr)
 
@@ -311,47 +319,47 @@ class Lightify:
         data = self.__sock.recv(lengthsize)
         (length,) = struct.unpack("<H", data[:lengthsize])
 
-        print(len(data))
+        self.__logger.debug(len(data))
         string = ""
         expected = length + 2 - len(data)
-        print "Length %d" % length
-        print "Expected %d" % expected
+        self.__logger.debug("Length %d", length)
+        self.__logger.debug("Expected %d", expected)
 
         while expected > 0:
-            print 'received "%d %s"' % (length, binascii.hexlify(data))
+            self.__logger.debug('received "%d %s"', length, binascii.hexlify(data))
             data = self.__sock.recv(expected)
             expected = expected - len(data)
             string = string + data
-        print 'received "%s"' % binascii.hexlify(string)
+        self.__logger.debug('received "%s"', binascii.hexlify(string))
         return data
 
     def read_light_status(self, light):
         data = self.build_light_status(light)
-        print 'sending "%s"' % binascii.hexlify(data)
+        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.__sock.sendall(data)
         data = self.recv()
         return
 
 
         (on,lum,temp,red,green,blue,h) = struct.unpack("<27x2BH4B16x", data)
-        print 'status: %0x %0x %d %0x %0x %0x %0x' % (on,lum,temp,red,green,blue,h)
+        self.__logger.debug('status: %0x %0x %d %0x %0x %0x %0x', on,lum,temp,red,green,blue,h)
 
-        print 'onoff: %d' % on
-        print 'temp:  %d' % temp
-        print 'lum:   %d' % lum
-        print 'red:   %d' % red
-        print 'green: %d' % green
-        print 'blue:  %d' % blue
+        self.__logger.debug( 'onoff: %d', on)
+        self.__logger.debug('temp:  %d', temp)
+        self.__logger.debug('lum:   %d', lum)
+        self.__logger.debug('red:   %d', red)
+        self.__logger.debug('green: %d', green)
+        self.__logger.debug('blue:  %d', blue)
         return (on, lum, temp, red, green, blue)
 
     def update_all_light_status(self):
         data = self.build_all_light_status(1)
-        print 'sending %d "%s"' % (len(data), binascii.hexlify(data))
+        self.__logger.debug('sending %d "%s"', len(data), binascii.hexlify(data))
         self.__sock.sendall(data)
         data = self.recv()
         (num,) = struct.unpack("<H", data[7:9])
 
-        print 'num: %d' % num
+        self.__logger.debug('num: %d', num)
 
         old_lights = self.__lights
         new_lights = {}
@@ -360,26 +368,26 @@ class Lightify:
             pos = 9 + i * 42
             payload = data[pos:pos+42]
 
-            print i, pos, len(payload)
+            self.__logger.debug("%d %d %d", i, pos, len(payload))
 
             (a,addr,status,name) = struct.unpack("<HQ16s16s", payload)
             name = name.replace('\0', "")
 
-            print 'light: %x %x %s' % (a,addr,name)
+            self.__logger.debug('light: %x %x %s', a, addr, name)
             if addr in old_lights:
                 light = old_lights[addr]
             else:
                 light = Light(self, addr, name)
 
             (b,on,lum,temp,red,green,blue,h) = struct.unpack("<Q2BH4B", status)
-            print 'status: %x %0x' % (b, h)
+            self.__logger.debug('status: %x %0x', b, h)
 
-            print 'onoff: %d' % on
-            print 'temp:  %d' % temp
-            print 'lum:   %d' % lum
-            print 'red:   %d' % red
-            print 'green: %d' % green
-            print 'blue:  %d' % blue
+            self.__logger.debug('onoff: %d', on)
+            self.__logger.debug('temp:  %d', temp)
+            self.__logger.debug('lum:   %d', lum)
+            self.__logger.debug('red:   %d', red)
+            self.__logger.debug('green: %d', green)
+            self.__logger.debug('blue:  %d', blue)
 
             light.update_status(on, lum, temp, red, green, blue)
             new_lights[addr] = light
