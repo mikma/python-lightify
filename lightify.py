@@ -42,8 +42,8 @@ PORT = 4000
 # 68 light status (returns light address and light status (?))
 
 class Light:
-    def __init__(self, conn, addr, name):
-        self.__logger = logging.getLogger(__name__)
+    def __init__(self, conn, logger, addr, name):
+        self.__logger = logger
         self.__conn = conn
         self.__addr = addr
         self.__name = name
@@ -71,7 +71,7 @@ class Light:
     def set_onoff(self, on):
         self.__on = on
         data = self.__conn.build_light_onoff(self, on)
-        self.logger.debug('sending "%s"', binascii.hexlify(data))
+        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.__conn.send(data)
         self.__conn.recv()
 
@@ -377,7 +377,7 @@ class Lightify:
             if addr in old_lights:
                 light = old_lights[addr]
             else:
-                light = Light(self, addr, name)
+                light = Light(self, self.__logger, addr, name)
 
             (b,on,lum,temp,red,green,blue,h) = struct.unpack("<Q2BH4B", status)
             self.__logger.debug('status: %x %0x', b, h)
