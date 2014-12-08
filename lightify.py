@@ -71,7 +71,6 @@ class Light:
     def set_onoff(self, on):
         self.__on = on
         data = self.__conn.build_light_onoff(self, on)
-        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.__conn.send(data)
         self.__conn.recv()
 
@@ -81,7 +80,6 @@ class Light:
     def set_luminance(self, lum, time):
         self.__lum = lum
         data = self.__conn.build_light_luminance(self, lum, time)
-        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.__conn.send(data)
         self.__conn.recv()
 
@@ -91,7 +89,6 @@ class Light:
     def set_temperature(self, temp, time):
         self.__temp = temp
         data = self.__conn.build_light_temp(self, temp, time)
-        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.__conn.send(data)
         self.__conn.recv()
 
@@ -104,7 +101,6 @@ class Light:
         self.__b = b
 
         data = self.__conn.build_light_colour(self, r, g, b, time)
-        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.__conn.send(data)
         self.__conn.recv()
 
@@ -139,25 +135,21 @@ class Group:
 
     def set_onoff(self, on):
         data = self.__conn.build_onoff(self.__idx, on)
-        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.__conn.send(data)
         self.__conn.recv()
 
     def set_luminance(self, lum, time):
         data = self.__conn.build_luminance(self.__idx, lum, time)
-        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.__conn.send(data)
         self.__conn.recv()
 
     def set_temperature(self, temp, time):
         data = self.__conn.build_temp(self.__idx, temp, time)
-        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.__conn.send(data)
         self.__conn.recv()
 
     def set_rgb(self, r, g, b, time):
         data = self.__conn.build_colour(self.__idx, r, g, b, time)
-        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.__conn.send(data)
         self.__conn.recv()
 
@@ -283,7 +275,6 @@ class Lightify:
     def group_list(self):
         groups = {}
         data = self.build_group_list()
-        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.send(data)
         data = self.recv()
         (num,) = struct.unpack("<H", data[7:9])
@@ -317,7 +308,6 @@ class Lightify:
     def group_info(self, group):
         lights = []
         data = self.build_group_info(group)
-        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.send(data)
         data = self.recv()
         payload = data[7:]
@@ -336,6 +326,7 @@ class Lightify:
         return lights
 
     def send(self, data):
+        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         return self.__sock.sendall(data)
 
     def recv(self):
@@ -359,7 +350,6 @@ class Lightify:
 
     def read_light_status(self, light):
         data = self.build_light_status(light)
-        self.__logger.debug('sending "%s"', binascii.hexlify(data))
         self.send(data)
         data = self.recv()
         return
@@ -378,7 +368,6 @@ class Lightify:
 
     def update_all_light_status(self):
         data = self.build_all_light_status(1)
-        self.__logger.debug('sending %d "%s"', len(data), binascii.hexlify(data))
         self.send(data)
         data = self.recv()
         (num,) = struct.unpack("<H", data[7:9])
