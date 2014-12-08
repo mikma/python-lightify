@@ -284,7 +284,7 @@ class Lightify:
         groups = {}
         data = self.build_group_list()
         self.__logger.debug('sending "%s"', binascii.hexlify(data))
-        self.__sock.sendall(data)
+        self.send(data)
         data = self.recv()
         (num,) = struct.unpack("<H", data[7:9])
         self.__logger.debug('Num %d', num)
@@ -318,7 +318,7 @@ class Lightify:
         lights = []
         data = self.build_group_info(group)
         self.__logger.debug('sending "%s"', binascii.hexlify(data))
-        self.__sock.sendall(data)
+        self.send(data)
         data = self.recv()
         payload = data[7:]
         (idx, name, num) = struct.unpack("<H16sB", payload[:19])
@@ -360,7 +360,7 @@ class Lightify:
     def read_light_status(self, light):
         data = self.build_light_status(light)
         self.__logger.debug('sending "%s"', binascii.hexlify(data))
-        self.__sock.sendall(data)
+        self.send(data)
         data = self.recv()
         return
 
@@ -379,7 +379,7 @@ class Lightify:
     def update_all_light_status(self):
         data = self.build_all_light_status(1)
         self.__logger.debug('sending %d "%s"', len(data), binascii.hexlify(data))
-        self.__sock.sendall(data)
+        self.send(data)
         data = self.recv()
         (num,) = struct.unpack("<H", data[7:9])
 
