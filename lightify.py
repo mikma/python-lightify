@@ -78,22 +78,35 @@ class Light:
     def lum(self):
         return self.__lum
 
-    def set_lum(self, lum):
+    def set_luminance(self, lum, time):
         self.__lum = lum
+        data = self.__conn.build_light_luminance(self, lum, time)
+        self.__logger.debug('sending "%s"', binascii.hexlify(data))
+        self.__conn.send(data)
+        self.__conn.recv()
 
     def temp(self):
         return self.__temp
 
-    def set_temp(self, temp):
+    def set_temperature(self, temp, time):
         self.__temp = temp
+        data = self.__conn.build_light_temp(self, temp, time)
+        self.__logger.debug('sending "%s"', binascii.hexlify(data))
+        self.__conn.send(data)
+        self.__conn.recv()
 
     def rgb(self):
         return (self.red(), self.green(), self.blue())
 
-    def set_rgb(self, r, g, b):
+    def set_rgb(self, r, g, b, time):
         self.__r = r
         self.__g = g
         self.__b = b
+
+        data = self.__conn.build_light_colour(self, r, g, b, time)
+        self.__logger.debug('sending "%s"', binascii.hexlify(data))
+        self.__conn.send(data)
+        self.__conn.recv()
 
     def red(self):
         return self.__r
@@ -230,14 +243,25 @@ class Lightify:
         command = 0x33
         return self.build_command(command, group, struct.pack("<HH", temp, time))
 
+    def build_light_temp(self, light, temp, time):
+        command = 0x33
+        return self.build_light_command(command, light, struct.pack("<HH", temp, time))
 
     def build_luminance(self, group, luminance, time):
         command = 0x31
         return self.build_command(command, group, struct.pack("<BH", luminance, time))
 
+    def build_light_luminance(self, light, luminance, time):
+        command = 0x31
+        return self.build_light_command(command, light, struct.pack("<BH", luminance, time))
+
     def build_colour(self, group, red, green, blue, time):
         command = 0x36
         return self.build_command(command, group, struct.pack("<BBBBH", red, green, blue, 0xff, time))
+
+    def build_light_colour(self, light, red, green, blue, time):
+        command = 0x36
+        return self.build_light_command(command, light, struct.pack("<BBBBH", red, green, blue, 0xff, time))
 
     def build_group_info(self, group):
         command = 0x26
