@@ -213,15 +213,20 @@ class Lightify:
 
         return struct.pack("<H6B", length, 0x02, command, 0, 0, 0x7, self.next_seq()) + data
 
+    def build_basic_command(self, flag, command, group_or_light, data):
+        length = 14 + len(data)
+
+        return struct.pack("<H6B", length, flag, command, 0, 0, 0x7, self.next_seq()) + group_or_light + data
+
     def build_command(self, command, group, data):
         length = 14 + len(data)
 
-        return struct.pack("<H14B", length, 0x02, command, 0, 0, 0x7, self.next_seq(), group, 0, 0, 0, 0, 0, 0, 0) + data
+        return self.build_basic_command(0x02, command, struct.pack("<8B", group, 0, 0, 0, 0, 0, 0, 0), data)
 
     def build_light_command(self, command, light, data):
         length = 6 + 8 + len(data)
 
-        return struct.pack("<H6BQ", length, 0x00, command, 0, 0, 0x7, self.next_seq(), light.addr()) + data
+        return self.build_basic_command(0x00, command, struct.pack("<Q", light.addr()), data)
 
     def build_onoff(self, group, on):
         command = 0x32
