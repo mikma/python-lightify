@@ -50,15 +50,42 @@ COMMAND_LIGHT_STATUS = 0x68
 # 36 set group colour
 # 68 light status (returns light address and light status (?))
 
-class Light:
-    def __init__(self, conn, logger, addr, name):
+class Luminary(object):
+    def __init__(self, conn, logger, name):
         self.__logger = logger
         self.__conn = conn
-        self.__addr = addr
         self.__name = name
 
     def name(self):
         return self.__name
+
+    def set_onoff(self, on):
+        data = self.__conn.build_onoff(self, on)
+        self.__conn.send(data)
+        self.__conn.recv()
+
+    def set_luminance(self, lum, time):
+        data = self.__conn.build_luminance(self, lum, time)
+        self.__conn.send(data)
+        self.__conn.recv()
+
+    def set_temperature(self, temp, time):
+        data = self.__conn.build_temp(self, temp, time)
+        self.__conn.send(data)
+        self.__conn.recv()
+
+    def set_rgb(self, r, g, b, time):
+        data = self.__conn.build_colour(self, r, g, b, time)
+        self.__conn.send(data)
+        self.__conn.recv()
+
+
+class Light(Luminary):
+    def __init__(self, conn, logger, addr, name):
+        super(Light, self).__init__(conn, logger, name)
+        self.__logger = logger
+        self.__conn = conn
+        self.__addr = addr
 
     def addr(self):
         return self.__addr
@@ -79,27 +106,21 @@ class Light:
 
     def set_onoff(self, on):
         self.__on = on
-        data = self.__conn.build_onoff(self, on)
-        self.__conn.send(data)
-        self.__conn.recv()
+        super(Light, self).set_onoff(on)
 
     def lum(self):
         return self.__lum
 
     def set_luminance(self, lum, time):
         self.__lum = lum
-        data = self.__conn.build_luminance(self, lum, time)
-        self.__conn.send(data)
-        self.__conn.recv()
+        super(Light, self).set_luminance(lum, time)
 
     def temp(self):
         return self.__temp
 
     def set_temperature(self, temp, time):
         self.__temp = temp
-        data = self.__conn.build_temp(self, temp, time)
-        self.__conn.send(data)
-        self.__conn.recv()
+        super(Light, self).set_temperature(temp, time)
 
     def rgb(self):
         return (self.red(), self.green(), self.blue())
@@ -109,9 +130,7 @@ class Light:
         self.__g = g
         self.__b = b
 
-        data = self.__conn.build_colour(self, r, g, b, time)
-        self.__conn.send(data)
-        self.__conn.recv()
+        super(Light, self).set_rgb(r, g, b, time)
 
     def red(self):
         return self.__r
@@ -125,16 +144,13 @@ class Light:
     def build_command(self, command, data):
         return self.__conn.build_light_command(command, self, data)
 
-class Group:
+class Group(Luminary):
     def __init__(self, conn, logger, idx, name):
+        super(Group, self).__init__(conn, logger, name)
         self.__conn = conn
         self.__logger = logger
         self.__idx = idx
-        self.__name = name
         self.__lights = []
-
-    def name(self):
-        return self.__name
 
     def idx(self):
         return self.__idx
@@ -144,26 +160,6 @@ class Group:
 
     def set_lights(self, lights):
         self.__lights = lights
-
-    def set_onoff(self, on):
-        data = self.__conn.build_onoff(self, on)
-        self.__conn.send(data)
-        self.__conn.recv()
-
-    def set_luminance(self, lum, time):
-        data = self.__conn.build_luminance(self, lum, time)
-        self.__conn.send(data)
-        self.__conn.recv()
-
-    def set_temperature(self, temp, time):
-        data = self.__conn.build_temp(self, temp, time)
-        self.__conn.send(data)
-        self.__conn.recv()
-
-    def set_rgb(self, r, g, b, time):
-        data = self.__conn.build_colour(self, r, g, b, time)
-        self.__conn.send(data)
-        self.__conn.recv()
 
     def __str__(self):
         s = ""
