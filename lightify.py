@@ -31,6 +31,15 @@ import logging
 MODULE = __name__
 PORT = 4000
 
+COMMAND_ALL_LIGHT_STATUS = 0x13
+COMMAND_GROUP_LIST = 0x1e
+COMMAND_GROUP_INFO = 0x26
+COMMAND_LUMINANCE = 0x31
+COMMAND_ONOFF = 0x32
+COMMAND_TEMP = 0x33
+COMMAND_COLOUR = 0x36
+COMMAND_LIGHT_STATUS = 0x68
+
 # Commands
 # 13 all light status (returns list of light address, light status, light name)
 # 1e group list (returns list of group id, and group name)
@@ -234,36 +243,29 @@ class Lightify:
         return self.build_basic_command(0x00, command, struct.pack("<Q", light.addr()), data)
 
     def build_onoff(self, item, on):
-        command = 0x32
-        return item.build_command(command, struct.pack("<B", on))
+        return item.build_command(COMMAND_ONOFF, struct.pack("<B", on))
 
     def build_temp(self, item, temp, time):
-        command = 0x33
-        return item.build_command(command, struct.pack("<HH", temp, time))
+        return item.build_command(COMMAND_TEMP, struct.pack("<HH", temp, time))
 
     def build_luminance(self, item, luminance, time):
-        command = 0x31
-        return item.build_command(command, struct.pack("<BH", luminance, time))
+        return item.build_command(COMMAND_LUMINANCE, struct.pack("<BH", luminance, time))
 
     def build_colour(self, item, red, green, blue, time):
-        command = 0x36
-        return item.build_command(command, struct.pack("<BBBBH", red, green, blue, 0xff, time))
+        return item.build_command(COMMAND_COLOUR, struct.pack("<BBBBH", red, green, blue, 0xff, time))
 
     def build_group_info(self, group):
-        command = 0x26
-        return self.build_command(command, group, "")
+        return self.build_command(COMMAND_GROUP_INFO, group, "")
 
     def build_all_light_status(self, flag):
-        command = 0x13
-        return self.build_global_command(command, struct.pack("<B", flag))
+        return self.build_global_command(COMMAND_ALL_LIGHT_STATUS, struct.pack("<B", flag))
 
     def build_light_status(self, light):
-        command = 0x68
-        return self.build_global_command(command, struct.pack("<Q", light))
+        return self.build_global_command(COMMAND_LIGHT_STATUS, struct.pack("<Q", light))
 
 
     def build_group_list(self):
-        return self.build_global_command(0x1e, "")
+        return self.build_global_command(COMMAND_GROUP_LIST, "")
 
 # WIP
     def group_list(self):
