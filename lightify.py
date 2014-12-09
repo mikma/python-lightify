@@ -261,13 +261,12 @@ class Lightify:
         return self.build_global_command(COMMAND_ALL_LIGHT_STATUS, struct.pack("<B", flag))
 
     def build_light_status(self, light):
-        return self.build_global_command(COMMAND_LIGHT_STATUS, struct.pack("<Q", light))
+        return light.build_command(COMMAND_LIGHT_STATUS, "")
 
 
     def build_group_list(self):
         return self.build_global_command(COMMAND_GROUP_LIST, "")
 
-# WIP
     def group_list(self):
         groups = {}
         data = self.build_group_list()
@@ -344,7 +343,7 @@ class Lightify:
         self.__logger.debug('received "%s"', binascii.hexlify(string))
         return data
 
-    def read_light_status(self, light):
+    def update_light_status(self, light):
         data = self.build_light_status(light)
         self.send(data)
         data = self.recv()
