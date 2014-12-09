@@ -134,22 +134,22 @@ class Group:
         self.__lights = lights
 
     def set_onoff(self, on):
-        data = self.__conn.build_onoff(self.__idx, on)
+        data = self.__conn.build_onoff(self, on)
         self.__conn.send(data)
         self.__conn.recv()
 
     def set_luminance(self, lum, time):
-        data = self.__conn.build_luminance(self.__idx, lum, time)
+        data = self.__conn.build_luminance(self, lum, time)
         self.__conn.send(data)
         self.__conn.recv()
 
     def set_temperature(self, temp, time):
-        data = self.__conn.build_temp(self.__idx, temp, time)
+        data = self.__conn.build_temp(self, temp, time)
         self.__conn.send(data)
         self.__conn.recv()
 
     def set_rgb(self, r, g, b, time):
-        data = self.__conn.build_colour(self.__idx, r, g, b, time)
+        data = self.__conn.build_colour(self, r, g, b, time)
         self.__conn.send(data)
         self.__conn.recv()
 
@@ -221,7 +221,7 @@ class Lightify:
     def build_command(self, command, group, data):
         length = 14 + len(data)
 
-        return self.build_basic_command(0x02, command, struct.pack("<8B", group, 0, 0, 0, 0, 0, 0, 0), data)
+        return self.build_basic_command(0x02, command, struct.pack("<8B", group.idx(), 0, 0, 0, 0, 0, 0, 0), data)
 
     def build_light_command(self, command, light, data):
         length = 6 + 8 + len(data)
@@ -303,7 +303,7 @@ class Lightify:
 
         for (idx, name) in lst.iteritems():
             group = Group(self, self.__logger, idx, name)
-            group.set_lights(self.group_info(idx))
+            group.set_lights(self.group_info(group))
 
             groups[name] = group
 
