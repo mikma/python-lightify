@@ -70,7 +70,7 @@ class Light:
 
     def set_onoff(self, on):
         self.__on = on
-        data = self.__conn.build_light_onoff(self, on)
+        data = self.__conn.build_onoff(self, on)
         self.__conn.send(data)
         self.__conn.recv()
 
@@ -79,7 +79,7 @@ class Light:
 
     def set_luminance(self, lum, time):
         self.__lum = lum
-        data = self.__conn.build_light_luminance(self, lum, time)
+        data = self.__conn.build_luminance(self, lum, time)
         self.__conn.send(data)
         self.__conn.recv()
 
@@ -88,7 +88,7 @@ class Light:
 
     def set_temperature(self, temp, time):
         self.__temp = temp
-        data = self.__conn.build_light_temp(self, temp, time)
+        data = self.__conn.build_temp(self, temp, time)
         self.__conn.send(data)
         self.__conn.recv()
 
@@ -100,7 +100,7 @@ class Light:
         self.__g = g
         self.__b = b
 
-        data = self.__conn.build_light_colour(self, r, g, b, time)
+        data = self.__conn.build_colour(self, r, g, b, time)
         self.__conn.send(data)
         self.__conn.recv()
 
@@ -112,6 +112,9 @@ class Light:
 
     def blue(self):
         return self.__b
+
+    def build_command(self, command, data):
+        return self.__conn.build_light_command(command, self, data)
 
 class Group:
     def __init__(self, conn, logger, idx, name):
@@ -164,6 +167,8 @@ class Group:
 
         return "<group: %s, lights: %s>" % (self.name(), s)
 
+    def build_command(self, command, data):
+        return self.__conn.build_command(command, self, data)
 
 class Lightify:
     def __init__(self, host):
@@ -228,37 +233,21 @@ class Lightify:
 
         return self.build_basic_command(0x00, command, struct.pack("<Q", light.addr()), data)
 
-    def build_onoff(self, group, on):
+    def build_onoff(self, item, on):
         command = 0x32
-        return self.build_command(command, group, struct.pack("<B", on))
+        return item.build_command(command, struct.pack("<B", on))
 
-    def build_light_onoff(self, light, on):
-        command = 0x32
-        return self.build_light_command(command, light, struct.pack("<B", on))
-
-    def build_temp(self, group, temp, time):
+    def build_temp(self, item, temp, time):
         command = 0x33
-        return self.build_command(command, group, struct.pack("<HH", temp, time))
+        return item.build_command(command, struct.pack("<HH", temp, time))
 
-    def build_light_temp(self, light, temp, time):
-        command = 0x33
-        return self.build_light_command(command, light, struct.pack("<HH", temp, time))
-
-    def build_luminance(self, group, luminance, time):
+    def build_luminance(self, item, luminance, time):
         command = 0x31
-        return self.build_command(command, group, struct.pack("<BH", luminance, time))
+        return item.build_command(command, struct.pack("<BH", luminance, time))
 
-    def build_light_luminance(self, light, luminance, time):
-        command = 0x31
-        return self.build_light_command(command, light, struct.pack("<BH", luminance, time))
-
-    def build_colour(self, group, red, green, blue, time):
+    def build_colour(self, item, red, green, blue, time):
         command = 0x36
-        return self.build_command(command, group, struct.pack("<BBBBH", red, green, blue, 0xff, time))
-
-    def build_light_colour(self, light, red, green, blue, time):
-        command = 0x36
-        return self.build_light_command(command, light, struct.pack("<BBBBH", red, green, blue, 0xff, time))
+        return item.build_command(command, struct.pack("<BBBBH", red, green, blue, 0xff, time))
 
     def build_group_info(self, group):
         command = 0x26
