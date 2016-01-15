@@ -368,16 +368,17 @@ class Lightify:
         old_lights = self.__lights
         new_lights = {}
 
+        status_len = 50
         for i in range(0, num):
-            pos = 9 + i * 42
-            payload = data[pos:pos+42]
+            pos = 9 + i * status_len
+            payload = data[pos:pos+status_len]
 
             self.__logger.debug("%d %d %d", i, pos, len(payload))
 
-            (a,addr,status,name) = struct.unpack("<HQ16s16s", payload)
+            (a,addr,status,name,extra) = struct.unpack("<HQ16s16sQ", payload)
             name = name.replace('\0', "")
 
-            self.__logger.debug('light: %x %x %s', a, addr, name)
+            self.__logger.debug('light: %x %x %s %x', a, addr, name, extra)
             if addr in old_lights:
                 light = old_lights[addr]
             else:
